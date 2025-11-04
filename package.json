@@ -1,0 +1,10 @@
+{
+  "name": "curalink",
+  "version": "1.0.0",
+  "description": "CuraLink - Clinical Research Platform",
+  "private": true,
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build"
+  }
+}
+

@@ -66,12 +66,31 @@ const PatientOnboarding = () => {
         setCurrentStep(2);
         setLoading(false);
       } else {
+        // Verify token exists before making request
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setError('Authentication required. Please refresh the page and try again.');
+          setLoading(false);
+          return;
+        }
+
         // Submit final form
         await api.put('/patients/profile', formData);
         navigate('/patient/dashboard');
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to save profile. Please try again.');
+      console.error('Profile update error:', err);
+      const errorMessage = err.response?.data?.error || 'Failed to save profile. Please try again.';
+      
+      // If 401, user needs to re-authenticate
+      if (err.response?.status === 401) {
+        setError('Session expired. Please refresh the page and try again.');
+        // Clear invalid token
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      } else {
+        setError(errorMessage);
+      }
       setLoading(false);
     }
   };

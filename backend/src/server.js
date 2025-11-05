@@ -36,6 +36,23 @@ app.use('/api/experts', expertsRoutes);
 app.use('/api/forums', forumsRoutes);
 app.use('/api/favorites', favoritesRoutes);
 
+// Root route - API information
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'CuraLink API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      health: '/api/health',
+      auth: {
+        register: 'POST /api/auth/register',
+        login: 'POST /api/auth/login'
+      },
+      docs: 'See README for full API documentation'
+    }
+  });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'CuraLink API is running' });

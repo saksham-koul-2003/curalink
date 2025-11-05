@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5001/api',
+  baseURL: process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' 
+    ? 'https://curalink-backend-l45u.onrender.com/api' 
+    : 'http://localhost:5001/api'),
   headers: {
     'Content-Type': 'application/json',
   },

@@ -4,6 +4,10 @@
   "outputDirectory": "frontend/build",
   "installCommand": "cd frontend && npm install",
   "framework": null,
+  "env": {
+    "REACT_APP_API_URL": "https://curalink-backend-l45u.onrender.com/api",
+    "REACT_APP_ENV": "production"
+  },
   "rewrites": [
     {
       "source": "/(.*)",

@@ -74,8 +74,12 @@ const PatientOnboarding = () => {
           return;
         }
 
-        // Submit final form
-        await api.put('/patients/profile', formData);
+        // Submit final form (explicit header to guarantee token is sent)
+        await api.put('/patients/profile', formData, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
         navigate('/patient/dashboard');
       }
     } catch (err) {

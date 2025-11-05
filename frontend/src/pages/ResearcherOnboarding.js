@@ -103,8 +103,12 @@ const ResearcherOnboarding = () => {
           return;
         }
 
-        // Submit final form
-        await api.put('/researchers/profile', formData);
+        // Submit final form (explicit header to guarantee token is sent)
+        await api.put('/researchers/profile', formData, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
         // Ensure loading is set to false before navigation
         setLoading(false);
         // Small delay to ensure state is updated

@@ -1,8 +1,16 @@
 const OpenAI = require('openai');
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy initialization - only create client when needed and API key exists
+let openai = null;
+
+function getOpenAIClient() {
+  if (!openai && process.env.OPENAI_API_KEY) {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openai;
+}
 
 async function generateSummary(text, maxLength = 200) {
   if (!process.env.OPENAI_API_KEY) {
@@ -10,8 +18,14 @@ async function generateSummary(text, maxLength = 200) {
     return text.substring(0, maxLength) + (text.length > maxLength ? '...' : '');
   }
 
+  const client = getOpenAIClient();
+  if (!client) {
+    // Fallback if client creation failed
+    return text.substring(0, maxLength) + (text.length > maxLength ? '...' : '');
+  }
+
   try {
-    const response = await openai.chat.completions.create({
+    const response = await client.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
         {
@@ -56,8 +70,19 @@ async function extractConditionsFromText(text) {
     return commonConditions.filter((condition) => lowerText.includes(condition));
   }
 
+  const client = getOpenAIClient();
+  if (!client) {
+    // Fallback if client creation failed
+    const commonConditions = [
+      'cancer', 'glioma', 'brain cancer', 'lung cancer', 'heart disease',
+      'diabetes', 'covid', 'alzheimer', 'parkinson', 'epilepsy',
+    ];
+    const lowerText = text.toLowerCase();
+    return commonConditions.filter((condition) => lowerText.includes(condition));
+  }
+
   try {
-    const response = await openai.chat.completions.create({
+    const response = await client.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
         {

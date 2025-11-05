@@ -19,6 +19,9 @@ const PORT = process.env.PORT || 5000;
 app.use(cors({
   origin: true, // Allow all origins (for production with multiple frontends)
   credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

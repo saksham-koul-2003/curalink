@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      // Token will be automatically added by interceptor on requests
       // Verify token and get user info
       const userData = localStorage.getItem('user');
       if (userData) {
@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
       const { token, user } = response.data;
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      // Token will be automatically added by interceptor on next request
       setUser(user);
       return { success: true, user };
     } catch (error) {
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
       const { token, user } = response.data;
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      // Token will be automatically added by interceptor on next request
       setUser(user);
       return { success: true, user };
     } catch (error) {
@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    delete api.defaults.headers.common['Authorization'];
+    // Token removal will be handled automatically by interceptor
     setUser(null);
   };
 

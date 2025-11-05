@@ -40,7 +40,7 @@ const LandingPage = () => {
           if (loginResult.data.token) {
             localStorage.setItem('token', loginResult.data.token);
             localStorage.setItem('user', JSON.stringify(loginResult.data.user));
-            api.defaults.headers.common['Authorization'] = `Bearer ${loginResult.data.token}`;
+            // Token will be automatically added by interceptor on next request
             navigate(type === 'patient' ? '/onboarding/patient' : '/onboarding/researcher');
           }
         } catch (loginError) {

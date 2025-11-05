@@ -44,9 +44,10 @@ const register = async (req, res) => {
     }
 
     // Generate token
+    const jwtSecret = process.env.JWT_SECRET || 'dev_secret';
     const token = jwt.sign(
       { id: user.id, email: user.email, user_type: user.user_type },
-      process.env.JWT_SECRET,
+      jwtSecret,
       { expiresIn: '7d' }
     );
 
@@ -107,9 +108,10 @@ const login = async (req, res) => {
     }
 
     // Generate token
+    const jwtSecret = process.env.JWT_SECRET || 'dev_secret';
     const token = jwt.sign(
       { id: user.id, email: user.email, user_type: user.user_type },
-      process.env.JWT_SECRET,
+      jwtSecret,
       { expiresIn: '7d' }
     );
 
@@ -125,7 +127,11 @@ const login = async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: isDevelopment ? error.message : undefined
+    });
   }
 };
 

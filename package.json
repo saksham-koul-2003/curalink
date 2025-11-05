@@ -2,9 +2,10 @@
   "name": "curalink",
   "version": "1.0.0",
   "description": "CuraLink - Clinical Research Platform",
-  "private": true,
   "scripts": {
-    "build": "cd frontend && npm install && npm run build"
+    "backend:install": "cd backend && npm install",
+    "backend:start": "cd backend && npm start",
+    "frontend:install": "cd frontend && npm install",
+    "frontend:build": "cd frontend && npm run build"
   }
 }
-

@@ -28,6 +28,28 @@ app.options('*', cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Optionally run migrations on boot (set RUN_MIGRATIONS_ON_BOOT=true in env)
+if (process.env.RUN_MIGRATIONS_ON_BOOT === 'true') {
+  try {
+    console.log('Running migrations on boot...');
+    const { spawn } = require('child_process');
+    const child = spawn(process.execPath, ['migrations/runMigrations.js'], {
+      cwd: __dirname + '/..',
+      stdio: 'inherit',
+      env: process.env,
+    });
+    child.on('close', (code) => {
+      if (code === 0) {
+        console.log('Migrations completed successfully.');
+      } else {
+        console.error(`Migrations failed with exit code ${code}.`);
+      }
+    });
+  } catch (err) {
+    console.error('Failed to trigger migrations on boot:', err);
+  }
+}
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/patients', patientRoutes);

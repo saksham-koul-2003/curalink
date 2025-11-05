@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import api from '../services/api';
 import './ConnectionRequests.css';
 
 const ConnectionRequests = () => {
+  const navigate = useNavigate();
   const [connectionData, setConnectionData] = useState({
     incoming: [],
     outgoing: [],
@@ -146,7 +148,14 @@ const ConnectionRequests = () => {
                   {activeTab === 'accepted' && (
                     <div className="card-actions">
                       <span className="badge badge-primary">Connected</span>
-                      <p className="text-muted" style={{ fontSize: '0.85em' }}>
+                      <button
+                        onClick={() => navigate(`/researcher/chat/${connection.id}`)}
+                        className="btn btn-primary"
+                        style={{ marginTop: '8px' }}
+                      >
+                        💬 Chat
+                      </button>
+                      <p className="text-muted" style={{ fontSize: '0.85em', marginTop: '8px' }}>
                         Connected since: {new Date(connection.updated_at).toLocaleDateString()}
                       </p>
                     </div>

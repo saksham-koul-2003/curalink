@@ -829,6 +829,184 @@ const respondToConnectionRequest = async (req, res) => {
   }
 };
 
+const sendMessage = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { connectionId } = req.params;
+    const { message } = req.body;
+
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    // Get researcher profile ID
+    const [profileRows] = await pool.query(
+      'SELECT id FROM researcher_profiles WHERE user_id = ?',
+      [userId]
+    );
+
+    if (profileRows.length === 0) {
+      return res.status(404).json({ error: 'Researcher profile not found' });
+    }
+
+    const senderProfileId = profileRows[0].id;
+
+    // Verify connection exists and is accepted
+    const [connectionRows] = await pool.query(
+      'SELECT requester_id, target_id FROM collaborator_connections WHERE id = ? AND status = ?',
+      [connectionId, 'accepted']
+    );
+
+    if (connectionRows.length === 0) {
+      return res.status(404).json({ error: 'Connection not found or not accepted' });
+    }
+
+    const connection = connectionRows[0];
+    const receiverProfileId = connection.requester_id === senderProfileId 
+      ? connection.target_id 
+      : connection.requester_id;
+
+    // Insert message
+    await pool.query(
+      `INSERT INTO chat_messages (connection_id, sender_id, receiver_id, message)
+       VALUES (?, ?, ?, ?)`,
+      [connectionId, senderProfileId, receiverProfileId, message.trim()]
+    );
+
+    res.json({ message: 'Message sent successfully' });
+  } catch (error) {
+    console.error('Send message error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const getMessages = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { connectionId } = req.params;
+
+    // Get researcher profile ID
+    const [profileRows] = await pool.query(
+      'SELECT id FROM researcher_profiles WHERE user_id = ?',
+      [userId]
+    );
+
+    if (profileRows.length === 0) {
+      return res.status(404).json({ error: 'Researcher profile not found' });
+    }
+
+    const researcherProfileId = profileRows[0].id;
+
+    // Verify connection exists and user is part of it
+    const [connectionRows] = await pool.query(
+      'SELECT requester_id, target_id FROM collaborator_connections WHERE id = ? AND status = ?',
+      [connectionId, 'accepted']
+    );
+
+    if (connectionRows.length === 0) {
+      return res.status(404).json({ error: 'Connection not found or not accepted' });
+    }
+
+    const connection = connectionRows[0];
+    if (connection.requester_id !== researcherProfileId && connection.target_id !== researcherProfileId) {
+      return res.status(403).json({ error: 'Not authorized to view this conversation' });
+    }
+
+    // Get messages with sender info
+    const [messageRows] = await pool.query(
+      `SELECT cm.*, 
+              u.name as sender_name,
+              rp.id as sender_profile_id
+       FROM chat_messages cm
+       JOIN researcher_profiles rp ON cm.sender_id = rp.id
+       JOIN users u ON rp.user_id = u.id
+       WHERE cm.connection_id = ?
+       ORDER BY cm.created_at ASC`,
+      [connectionId]
+    );
+
+    // Mark messages as read
+    await pool.query(
+      'UPDATE chat_messages SET is_read = true WHERE connection_id = ? AND receiver_id = ? AND is_read = false',
+      [connectionId, researcherProfileId]
+    );
+
+    res.json({ 
+      messages: messageRows,
+      currentUserProfileId: researcherProfileId 
+    });
+  } catch (error) {
+    console.error('Get messages error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+const getConversations = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get researcher profile ID
+    const [profileRows] = await pool.query(
+      'SELECT id FROM researcher_profiles WHERE user_id = ?',
+      [userId]
+    );
+
+    if (profileRows.length === 0) {
+      return res.status(404).json({ error: 'Researcher profile not found' });
+    }
+
+    const researcherProfileId = profileRows[0].id;
+
+    // Get all accepted connections with last message info
+    const [conversationRows] = await pool.query(
+      `SELECT 
+        cc.id as connection_id,
+        cc.updated_at,
+        CASE 
+          WHEN cc.requester_id = ? THEN rp2.id
+          ELSE rp1.id
+        END as other_profile_id,
+        CASE 
+          WHEN cc.requester_id = ? THEN u2.name
+          ELSE u1.name
+        END as other_name,
+        CASE 
+          WHEN cc.requester_id = ? THEN u2.email
+          ELSE u1.email
+        END as other_email,
+        (SELECT message FROM chat_messages 
+         WHERE connection_id = cc.id 
+         ORDER BY created_at DESC LIMIT 1) as last_message,
+        (SELECT created_at FROM chat_messages 
+         WHERE connection_id = cc.id 
+         ORDER BY created_at DESC LIMIT 1) as last_message_time,
+        (SELECT COUNT(*) FROM chat_messages 
+         WHERE connection_id = cc.id 
+         AND receiver_id = ? 
+         AND is_read = false) as unread_count
+       FROM collaborator_connections cc
+       JOIN researcher_profiles rp1 ON cc.requester_id = rp1.id
+       JOIN researcher_profiles rp2 ON cc.target_id = rp2.id
+       JOIN users u1 ON rp1.user_id = u1.id
+       JOIN users u2 ON rp2.user_id = u2.id
+       WHERE (cc.requester_id = ? OR cc.target_id = ?) 
+       AND cc.status = 'accepted'
+       ORDER BY COALESCE(
+         (SELECT created_at FROM chat_messages 
+          WHERE connection_id = cc.id 
+          ORDER BY created_at DESC LIMIT 1),
+         cc.updated_at
+       ) DESC`,
+      [researcherProfileId, researcherProfileId, researcherProfileId, researcherProfileId, researcherProfileId, researcherProfileId]
+    );
+
+    res.json({ conversations: conversationRows });
+  } catch (error) {
+    console.error('Get conversations error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 module.exports = {
   getProfile,
   updateProfile,
@@ -838,4 +1016,7 @@ module.exports = {
   requestConnection,
   getConnectionRequests,
   respondToConnectionRequest,
+  sendMessage,
+  getMessages,
+  getConversations,
 };

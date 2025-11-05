@@ -8,6 +8,7 @@
     "dev": "nodemon src/server.js",
     "migrate": "node migrations/runMigrations.js",
     "migrate:progress": "node migrations/addProgressColumn.js",
+    "migrate:chat": "node migrations/addChatMessages.js",
     "clear:trials": "node migrations/clearOldTrials.js",
     "clear:experts": "node migrations/clearManualExperts.js"
   },

@@ -16,6 +16,7 @@ import ConnectionRequests from './pages/ConnectionRequests';
 import MeetingRequests from './pages/MeetingRequests';
 import Forums from './pages/Forums';
 import Favorites from './pages/Favorites';
+import Chat from './pages/Chat';
 import PrivateRoute from './components/PrivateRoute';
 import './App.css';
 import './styles/theme.css';
@@ -97,6 +98,14 @@ function App() {
             element={
               <PrivateRoute>
                 <ConnectionRequests />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/researcher/chat/:connectionId"
+            element={
+              <PrivateRoute>
+                <Chat />
               </PrivateRoute>
             }
           />

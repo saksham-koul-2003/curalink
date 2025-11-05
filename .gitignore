@@ -27,6 +27,10 @@ yarn-error.log*
 .env.production
 .env.development
 
+# Documentation files
+*.md
+!README.md
+
 # IDE
 .vscode/
 .idea/

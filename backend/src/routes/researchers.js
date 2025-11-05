@@ -14,6 +14,9 @@ router.get('/collaborators/:id/profile', researcherController.getCollaboratorPro
 router.post('/collaborators/:id/connect', researcherController.requestConnection);
 router.get('/connections', researcherController.getConnectionRequests);
 router.post('/connections/:id/respond', researcherController.respondToConnectionRequest);
+router.get('/chat/conversations', researcherController.getConversations);
+router.get('/chat/:connectionId/messages', researcherController.getMessages);
+router.post('/chat/:connectionId/messages', researcherController.sendMessage);
 
 module.exports = router;
 

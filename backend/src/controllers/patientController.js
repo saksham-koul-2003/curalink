@@ -1,6 +1,7 @@
 const pool = require('../config/database');
 const { extractConditionsFromText } = require('../utils/aiService');
 const { searchClinicalTrials, searchAllPublications } = require('../utils/externalAPIs');
+const { scoreTrialForPatient } = require('../utils/matcher');
 const { jsonContainsAny } = require('../utils/dbHelpers');
 
 const getProfile = async (req, res) => {

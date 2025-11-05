@@ -64,6 +64,24 @@
   word-wrap: break-word;
 }
 
+.match-score-badge {
+  margin: 8px 0 12px 0;
+  display: inline-block;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.match-reasons {
+  margin: 6px 0 0 0;
+  padding-left: 18px;
+  color: #155e3b;
+  font-size: 12px;
+}
+
 .trial-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);

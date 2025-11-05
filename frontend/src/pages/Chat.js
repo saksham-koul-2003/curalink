@@ -145,13 +145,26 @@ const Chat = () => {
         <div className="container">
           <div className="chat-container">
             <div className="chat-header">
-              <button 
-                className="back-button"
-                onClick={() => navigate('/researcher/connections')}
-              >
-                ← Back
-              </button>
-              <h2>{otherUser?.name || 'Chat'}</h2>
+              <div className="chat-header-left">
+                <button 
+                  className="back-button"
+                  onClick={() => navigate('/researcher/connections')}
+                >
+                  ← Back
+                </button>
+                <h2>{otherUser?.name || 'Chat'}</h2>
+              </div>
+              <div className="chat-header-actions">
+                <a
+                  href={`https://meet.jit.si/curalink-connection-${connectionId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="video-call-button"
+                  title="Start video meeting"
+                >
+                  🎥 Start Video
+                </a>
+              </div>
             </div>
 
             <div className="chat-messages" ref={messagesContainerRef}>

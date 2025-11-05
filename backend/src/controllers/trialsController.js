@@ -2,15 +2,40 @@ const pool = require('../config/database');
 const { searchClinicalTrials } = require('../utils/externalAPIs');
 const { generateSummary } = require('../utils/aiService');
 const { parseJsonFields } = require('../utils/dbHelpers');
+const { scoreTrialForPatient } = require('../utils/matcher');
 
 const searchTrials = async (req, res) => {
   try {
     const { query, status, location, my_trials_only } = req.query;
     const userId = req.user?.id;
+    const userType = req.user?.user_type;
 
     console.log('[Search Trials] Request params:', { query, status, location, my_trials_only, userId });
 
     let trials = [];
+
+    // Load patient profile if needed for scoring
+    let patientProfile = null;
+    if (userId && userType === 'patient') {
+      try {
+        const [rows] = await pool.query(
+          `SELECT pp.*, u.location as user_location
+           FROM patient_profiles pp JOIN users u ON u.id = pp.user_id
+           WHERE pp.user_id = ?`,
+          [userId]
+        );
+        if (rows.length > 0) {
+          patientProfile = rows[0];
+          if (patientProfile.conditions) {
+            patientProfile.conditions = typeof patientProfile.conditions === 'string'
+              ? JSON.parse(patientProfile.conditions)
+              : patientProfile.conditions;
+          }
+        }
+      } catch (e) {
+        console.warn('[Search Trials] Unable to load patient profile for scoring:', e.message);
+      }
+    }
 
     // For researchers with my_trials_only: ALWAYS skip external API - only show their own trials
     // This is the CRITICAL check - must be first and must skip external API entirely
@@ -94,11 +119,20 @@ const searchTrials = async (req, res) => {
         }
         
         // Return external trials with AI summaries from database
-        const trialsWithUrls = externalTrials.map(trial => ({
+        let trialsWithUrls = externalTrials.map(trial => ({
           ...trial,
           ctgov_url: trial.ctgov_url || `https://clinicaltrials.gov/search?id=${trial.nct_id}`,
           ai_summary: aiSummariesMap[trial.nct_id] || trial.ai_summary || null,
         }));
+        // Attach match scoring for patients
+        if (patientProfile) {
+          trialsWithUrls = trialsWithUrls.map(t => {
+            const { score, reasons } = scoreTrialForPatient(patientProfile, t);
+            return { ...t, match_score: score, match_reasons: reasons };
+          });
+          // Sort by score desc
+          trialsWithUrls.sort((a, b) => (b.match_score || 0) - (a.match_score || 0));
+        }
         
         return res.json(trialsWithUrls);
       } catch (error) {
@@ -189,11 +223,18 @@ const searchTrials = async (req, res) => {
       }
     }
     
-    // Add ctgov_url to trials from database
+    // Add ctgov_url and match scoring for patients
     trials = trials.map(trial => ({
       ...trial,
       ctgov_url: trial.nct_id ? `https://clinicaltrials.gov/search?id=${trial.nct_id}` : null,
     }));
+
+    if (patientProfile) {
+      trials = trials.map(t => {
+        const { score, reasons } = scoreTrialForPatient(patientProfile, t);
+        return { ...t, match_score: score, match_reasons: reasons };
+      }).sort((a, b) => (b.match_score || 0) - (a.match_score || 0));
+    }
 
     console.log('[Search Trials] Returning', trials.length, 'trials');
     res.json(trials);

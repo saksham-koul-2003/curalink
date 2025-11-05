@@ -422,6 +422,18 @@ const ClinicalTrials = ({ isResearcher = false }) => {
                     </button>
                   )}
                   <h3 className="trial-title">{trial.title}</h3>
+                  {!isResearcher && typeof trial.match_score === 'number' && (
+                    <div className="match-score-badge" title={(trial.match_reasons || []).join(' • ')}>
+                      Match: {trial.match_score}%
+                      {trial.match_reasons && trial.match_reasons.length > 0 && (
+                        <ul className="match-reasons">
+                          {trial.match_reasons.map((r, idx) => (
+                            <li key={idx}>{r}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
                   
                   {/* AI Summary Section - Only for researchers, show on click */}
                   {isResearcher && trial.ai_summary && expandedSummaries.has(trial.id) && (
